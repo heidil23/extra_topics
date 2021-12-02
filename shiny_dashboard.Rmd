@@ -1,0 +1,115 @@
+---
+title: "Shiny Dashboard"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+
+library(tidyverse)
+library(viridis)
+library(p8105.datasets)
+library(plotly)
+```
+
+```{r data_import}
+data("nyc_airbnb")
+
+nyc_airbnb =
+  nyc_airbnb %>% 
+  mutate(stars = review_scores_location / 2) %>% 
+  select(
+    borough = neighbourhood_group, neighbourhood, stars, price, room_type, lat, long) %>% 
+drop_na(stars)
+```
+
+Column {.sidebar}
+-----------------------------------------------------------------------
+
+```{r}
+borough_choices =
+  nyc_airbnb %>% 
+  distinct(borough) %>%
+  pull()
+
+selectInput(
+  "borough_choice",
+  label = h3("Select Borough"),
+  choices = borough_choices,
+  selected = "Manhattan")
+
+min_price = 
+  nyc_airbnb %>% 
+  distinct(price) %>% 
+  min()
+
+max_price = 
+  nyc_airbnb %>% 
+  distinct(price) %>% 
+  max()
+
+sliderInput(
+  "price_choice",
+  label = h3("Price range"),
+  min = min_price,
+  max = 1000,
+  value = c(100, 500)
+)
+
+room_choices =
+  nyc_airbnb %>% 
+  distinct(room_type) %>%
+  pull()
+
+radioButtons(
+  "room_choice",
+  label = h3("Room type"),
+  choices = room_choices,
+  selected = "Entire home/apt"
+)
+```
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Chart A
+
+```{r}
+renderPlotly({
+  
+  nyc_airbnb %>% 
+    filter(
+      borough == input[["borough_choice"]],
+      price > input[["price_choice"]][1], price < input[["price_choice"]][2],
+      room_type == input[["room_choice"]]
+    ) %>% 
+    plot_ly(
+      x = ~lat, y = ~long, type = "scatter", mode = "markers",
+           color = ~price, alpha = .5)
+  
+})
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Chart B
+
+```{r}
+renderPrint({
+  input[["price_choice"]]
+})
+```
+
+### Chart C
+
+```{r}
+renderPrint({
+  input[["room_choice"]]
+})
+```
+
