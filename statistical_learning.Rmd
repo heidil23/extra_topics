@@ -118,3 +118,36 @@ lasso_fit %>%
   geom_vline(xintercept = log(lambda_opt))
 ```
 As lambda gets bigger, all coefficients get smaller until all are removed from the model
+
+
+## Cluster pokemons
+
+```{r}
+pokemon_df = 
+  read_csv("./data/pokemon.csv") %>% 
+  janitor::clean_names() %>% 
+  select(speed, hp)
+```
+
+Take a quick look at our pokemons
+
+```{r}
+pokemon_df %>% 
+  ggplot(aes(x = hp, y = speed)) +
+  geom_point()
+```
+
+Use K-means to identify clusters.
+
+```{r}
+kmeans_fit =
+  kmeans(x = pokemon_df, centers = 3)
+```
+
+```{r}
+pokemon_df %>% 
+  broom::augment(kmeans_fit, .) %>% 
+  ggplot(aes(x = hp, y = speed, color = .cluster)) +
+  geom_point()
+```
+
